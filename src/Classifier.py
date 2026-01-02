@@ -19,8 +19,9 @@ class Classifier():
 
             logits = outputs.logits
             predicted_class_idx = logits.argmax(-1).item()
-
-            return self.model.config.id2label[predicted_class_idx]
+            confidence = logits.softmax(-1)[0, predicted_class_idx]
+            category = self.model.config.id2label[predicted_class_idx]
+            return category, confidence
         
         except FileNotFoundError as err:
             print(f'Image path incorrect: {err}')
