@@ -7,7 +7,7 @@ class Classifier():
     """
 
     def __init__(self, model_name='google/vit-base-patch16-224'):
-        self.processor = ViTImageProcessor.from_pretrained(model_name)
+        self.processor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
         self.model = ViTForImageClassification.from_pretrained(model_name)
     
     def classify(self, image_path=''):

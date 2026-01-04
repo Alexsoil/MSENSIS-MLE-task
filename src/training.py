@@ -107,15 +107,15 @@ with open('dataset/data.pkl', 'rb') as picklefile:
     )
 
     train_args = TrainingArguments(
-        output_dir='models',
-        per_device_train_batch_size=16,
+        output_dir='modelsB',
+        per_device_train_batch_size=32,
         eval_strategy='steps',
-        num_train_epochs=2,
+        num_train_epochs=1,
         fp16=True,
         save_steps=10,
         eval_steps=10,
         logging_steps=10,
-        learning_rate=2e-4,
+        learning_rate=3e-4,
         save_total_limit=2,
         remove_unused_columns=False,
         push_to_hub=False,
@@ -129,7 +129,7 @@ with open('dataset/data.pkl', 'rb') as picklefile:
         train_dataset=train_ds,
         eval_dataset=val_ds,
         data_collator=collate_fn,
-        tokenizer=processor,
+        processing_class=processor,
     )
 
     trainer.train(resume_from_checkpoint=True)
@@ -143,3 +143,5 @@ with open('dataset/data.pkl', 'rb') as picklefile:
     y_pred = outputs.predictions.argmax(1)
 
     print(classification_report(y_true, y_pred, target_names=target_names))
+
+    model.save_pretrained('finished_models/cats_dogs_finetune')
