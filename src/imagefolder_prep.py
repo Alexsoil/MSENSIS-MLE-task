@@ -1,6 +1,11 @@
 import os
 import subprocess
 
+# ONLY USED FOR TRAINING
+# Dataset Specific
+# Splits images into dog and cat folders to comply with the ImageFolder structure
+# for use with HuggingFace Datasets.
+
 for image_path in os.listdir('dataset/images'):
     image_id = image_path.split('.')[0]
     try:

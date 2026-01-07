@@ -1,9 +1,7 @@
 import pickle
-import datasets
 from transformers import ViTImageProcessor, ViTForImageClassification, TrainingArguments, Trainer
 import torchvision.transforms as tv
 import torch
-import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report
 
@@ -11,10 +9,12 @@ from sklearn.metrics import classification_report
 model_name = 'google/vit-base-patch16-224'
 
 with open('dataset/data.pkl', 'rb') as picklefile:
+    # Load Dataset
     dataset = pickle.load(picklefile)
     print(dataset)
     print(dataset['train'].features)
 
+    # Split into Training, Evaluation and Testing fractions.
     train_test_split = dataset['train'].train_test_split(test_size=0.1)
     train_val_split = train_test_split['train'].train_test_split(test_size=0.1)
     final_dataset = {
@@ -27,6 +27,7 @@ with open('dataset/data.pkl', 'rb') as picklefile:
     val_ds = final_dataset['val']
     test_ds = final_dataset['test']
 
+    # Create dicts for indexing ids and labels.
     labels = train_ds.features['label'].names
 
     label2id = dict()
@@ -37,7 +38,7 @@ with open('dataset/data.pkl', 'rb') as picklefile:
 
     processor = ViTImageProcessor.from_pretrained(model_name)
     
-    # Get Conf
+    # Get configuration of image processor and prepare image transformation and normalization methods.
     image_mean, image_std = processor.image_mean, processor.image_std
     size = processor.size['height']
 
@@ -70,6 +71,7 @@ with open('dataset/data.pkl', 'rb') as picklefile:
         ]
     )
 
+    # Prepare transformation methods.
     def apply_train_transforms(samples):
         samples['pixel_values'] = [train_transforms(image.convert('RGB')) for image in samples['image']]
         return samples
@@ -106,8 +108,9 @@ with open('dataset/data.pkl', 'rb') as picklefile:
         ignore_mismatched_sizes=True
     )
 
+    # Important!: remove_unused_collumns must be set to False otherwise 'pixel_values' column will be removed.
     train_args = TrainingArguments(
-        output_dir='modelsB',
+        output_dir='models',
         per_device_train_batch_size=32,
         eval_strategy='steps',
         num_train_epochs=1,
@@ -134,6 +137,7 @@ with open('dataset/data.pkl', 'rb') as picklefile:
 
     trainer.train(resume_from_checkpoint=True)
 
+    # Testing and evaluation of classification results.
     outputs = trainer.predict(test_ds)
     print(outputs.metrics)
 
@@ -144,4 +148,5 @@ with open('dataset/data.pkl', 'rb') as picklefile:
 
     print(classification_report(y_true, y_pred, target_names=target_names))
 
+    # Save Local model
     model.save_pretrained('finished_models/cats_dogs_finetune')
