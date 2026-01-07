@@ -1,28 +1,38 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import Response
 import shutil
+import os
 from Classifier import Classifier
 
 app = FastAPI()
 
 @app.post('/upload')
 async def create_upload_file(file: UploadFile = File(...)):
-    with open('images/your_image.jpg', 'wb') as buffer:
+    os.makedirs('images', exist_ok=True)
+    with open(os.path.join('images', 'your_image.jpg'), 'wb') as buffer:
         shutil.copyfileobj(file.file, buffer)
-    return {'filename': file.filename}
+    return {'Message': 'Upload Successful',
+            'filename': file.filename}
+
+@app.get('/analyze/finetuned')
+async def analyze_file_finetuned():
+    try:
+        classifier = Classifier(model_name='Alexsoil/ViT-cats-dogs')
+        category, confidence = classifier.classify(os.path.join('images', 'your_image.jpg'))
+        return {'Message': 'Analysis complete using fine-tuned ViT Transformer.',
+                f'Image Class: {category}': f'Confidence: {confidence * 100:.2f}%'}
+    except FileNotFoundError as err:
+        return {'Error': 'Please upload an image via the /upload endpoint.'}
+
+@app.get('/analyze/pretrained')
+async def analyze_file_pretrained():
+    try:
+        classifier = Classifier()
+        category, confidence = classifier.classify(os.path.join('images', 'your_image.jpg'))
+        return {'Message': 'Analysis complete using pretrained ViT Transformer.',
+                f'Image Class: {category}': f'Confidence: {confidence * 100:.2f}%'}
+    except FileNotFoundError as err:
+        return {'Error': 'Please upload an image via the /upload endpoint'}
 
 @app.get('/')
 async def root():
     return {'Message': 'Image Recognition Running'}
-
-@app.get('/analyze/finetuned')
-async def analyze_file():
-    classifier = Classifier(model_name='finished_models/cats_dogs_finetune')
-    category, confidence = classifier.classify('images/your_image.jpg')
-    return {f'Image Class: {category}': f'Confidence: {confidence * 100:.2f}%'}
-
-@app.get('/analyze/pretrained')
-async def analyze_file():
-    classifier = Classifier()
-    category, confidence = classifier.classify('images/your_image.jpg')
-    return {f'Image Class: {category}': f'Confidence: {confidence * 100:.2f}%'}
